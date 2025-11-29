@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Your Might - Planar Graph Challenge</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Three.js Core -->
+    <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <!-- OrbitControls (Matched Version) -->
+    <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- TWEEN.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body { margin: 0; background-color: #0f172a; overflow: hidden; user-select: none; -webkit-user-select: none; }
+        canvas { touch-action: none; outline: none; }
+        
+        /* Explicit Cursor Classes */
+        .cursor-default { cursor: default !important; }
+        .cursor-pointer { cursor: pointer !important; }
+        .cursor-grab { cursor: grab !important; cursor: -webkit-grab !important; } 
+        .cursor-grabbing { cursor: grabbing !important; cursor: -webkit-grabbing !important; }
+        
+        /* Toggle Switch Gradient */
+        .toggle-gradient { background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%); }
+        
+        /* Euler Tracker */
+        .euler-glass {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Modern Buttons */
+        .btn-action {
+            backdrop-filter: blur(8px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: 1px solid transparent;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            color: white;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+        }
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+            transform: none;
+            box-shadow: none;
+            filter: grayscale(0.8);
+        }
+
+        /* Specific Button Variants */
+        .btn-action.planar {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+        .btn-action.planar:hover {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: #10b981;
+            color: #d1fae5;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-action.nonplanar {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+        .btn-action.nonplanar:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: #ef4444;
+            color: #fee2e2;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-action.giveup {
+            background: rgba(100, 116, 139, 0.15);
+            border-color: rgba(148, 163, 184, 0.3);
+            color: #94a3b8;
+        }
+        .btn-action.giveup:hover {
+            background: rgba(100, 116, 139, 0.4);
+            border-color: #cbd5e1;
+            color: #e2e8f0;
+        }
+
+        .btn-action.dual {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+        .btn-action.dual:hover {
+            background: rgba(245, 158, 11, 0.3);
+            border-color: #f59e0b;
+            color: #fffbeb;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-action.next {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2));
+            border-color: rgba(6, 182, 212, 0.5);
+            color: #67e8f9;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+        }
+        .btn-action.next:hover {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(59, 130, 246, 0.4));
+            border-color: #22d3ee;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+            text-shadow: 0 0 5px rgba(34, 211, 238, 0.8);
+        }
+
+        /* Animations */
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+
+        /* Typography */
+        .math-symbol { font-family: 'Times New Roman', serif; font-style: italic; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+        // --- ICONS ---
+        const Icons = {
+            Zap: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
+            RotateCcw: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>,
+            Cube: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>,
+            CheckCircle: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+            GridIcon: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
+            ZoomIn: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>,
+            ZoomOut: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>,
+            Eye: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
+            ChevronUp: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>,
+            Lightbulb: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1.5 1.5-3.2 1.5-5.5 0-3.2-2.8-6-6-6S6 2.8 6 6c0 2.3.5 4 1.5 5.5.7.8 1.2 1.5 1.5 2.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg>,
+            Trophy: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17"></path><path d="M14 14.66V17"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path><path d="M8.5 22l1.33-2.66"></path><path d="M15.5 22l-1.33-2.66"></path></svg>,
+            Play: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={p.fill||"none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
+            ArrowRight: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
+            Hexagon: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>,
+            XCircle: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>,
+            BookOpen: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 19.5c0 .5.5 2 2 2 1.5 0 2-.5 2-2 0-1.5-.5-2-2-2-1.5 0-2 .5-2 2z"/><path d="M12 19.5c0 .5.5 2 2 2 1.5 0 2-.5 2-2 0-1.5-.5-2-2-2-1.5 0-2 .5-2 2z"/><path d="M20 19.5c0 .5.5 2 2 2 1.5 0 2-.5 2-2 0-1.5-.5-2-2-2-1.5 0-2 .5-2 2z"/><path d="M12 2c-3.3 0-6 2.7-6 6v12c0 1.1-.9 2-2 2s-2-.9-2-2V8c0-3.3 2.7-6 6-6h8c3.3 0 6 2.7 6 6v12c0 1.1-.9 2-2 2s-2-.9-2-2V8c0-3.3-2.7-6-6-6z"/></svg>,
+            Close: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+            Help: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        };
+
+        const CANVAS_WIDTH = 1000;
+        const CANVAS_HEIGHT = 600;
+        const SNAP_SIZE = 20; 
+        const FACE_COLORS = [
+            "hsla(340, 90%, 60%, 0.4)", "hsla(200, 90%, 50%, 0.4)", "hsla(45, 90%, 50%, 0.4)", "hsla(150, 80%, 40%, 0.4)", "hsla(270, 80%, 60%, 0.4)"
+        ];
+
+        const LEVELS = [
+            { id: 1, name: "The Trinity", nodes: 3, difficulty: "Tutorial", desc: "A triangle is the simplest graph structure.", hint: "Any graph with 3 or fewer nodes is always planar.", result: "A graph with V \\le 3 is trivially planar." },
+            { id: 2, name: "Square One", nodes: 4, difficulty: "Easy", desc: "Four points connected in a cycle.", hint: "Move one node into the center to untangle the cross.", result: "This graph, C_4 with a chord, is planar." },
+            { id: 3, name: "Pentagon", nodes: 5, difficulty: "Easy", desc: "Five nodes, forming a cycle and chords.", hint: "The edges form a 'star' inside a 'ring'.", result: "This graph is planar." },
+            { id: 4, name: "The Wheel", nodes: 6, difficulty: "Medium", desc: "One central node connected to every other node.", hint: "If the central node is placed neatly in the middle, the graph should be planar.", result: "This is a Wheel graph, W_5, which is planar." },
+            { id: 5, name: "Utilities", nodes: 6, type: "K33", difficulty: "Tricky", isNonPlanar: true, desc: "3 Houses, 3 Utilities. The classic challenge.", hint: "Remember Kuratowski's Theorem. This graph is infamous.", result: "This is a K_{3,3}, the first non-planar graph." },
+            { id: 6, name: "Mystic 7", nodes: 7, type: "Random", difficulty: "Medium", desc: "Lucky number 7. Keep it planar.", hint: "Try arranging the nodes in a large circle first, then move the connected ones inside.", result: "This random graph is planar." },
+            { id: 7, name: "Octagon", nodes: 8, type: "Random", difficulty: "Medium", desc: "More nodes, more edges, more chaos.", hint: "Look for loops and cycles. If you see a twisted cycle, untwist it.", result: "This graph is planar." },
+            { id: 8, name: "The Ladder", nodes: 8, type: "Random", difficulty: "Medium", desc: "Looks like a twisted ladder.", hint: "Arrange the nodes in two parallel lines (like a ladder) to see the connections clearly.", result: "This graph is planar." },
+            { id: 9, name: "Complete 5", nodes: 5, type: "K5", difficulty: "Hard", isNonPlanar: true, desc: "Connect every node to every other node.", hint: "Smallest non-planar complete graph.", result: "This is K_5, non-planar by Kuratowski's theorem." },
+            { id: 10, name: "Tangled 10", nodes: 10, type: "Random", difficulty: "Hard", desc: "Double digits.", hint: "Move the nodes with the most connections to the outside perimeter.", result: "This graph is planar." },
+            { id: 11, name: "Nested", nodes: 10, type: "Random", difficulty: "Hard", desc: "Triangles inside triangles.", hint: "Try to separate the inner triangles from the outer ones.", result: "This nested structure is planar." },
+            { id: 12, name: "Prism", nodes: 12, type: "Random", difficulty: "Hard", desc: "A 3D prism flattened out.", hint: "Imagine looking at a prism from the top down.", result: "This prism graph is planar." },
+            { id: 13, name: "Bipartite Chaos", nodes: 8, type: "K33", difficulty: "Expert", isNonPlanar: true, desc: "A disguised K_{3,3} graph.", hint: "Look for the 3x3 bipartite structure.", result: "Contains a K_{3,3} minor, thus non-planar." },
+            { id: 14, name: "Dozen Nodes", nodes: 12, type: "Random", difficulty: "Hard", desc: "Getting crowded.", hint: "Space is key. Expand the graph as much as possible.", result: "This graph is planar." },
+            { id: 15, name: "Complex 5", nodes: 10, type: "K5", difficulty: "Expert", isNonPlanar: true, desc: "Hidden K_5 subgraph.", hint: "Identify the non-planarity.", result: "Contains K_5 minor, thus non-planar." },
+            { id: 16, name: "Sweet 16", nodes: 16, type: "Random", difficulty: "Very Hard", desc: "Use Euler's Formula.", hint: "No hints here. Good luck.", result: "This graph is planar." },
+            { id: 17, name: "Gridlock", nodes: 16, type: "Random", difficulty: "Very Hard", desc: "A 4x4 grid twisted.", hint: "No hints here.", result: "This graph is planar." },
+            { id: 18, name: "The Web", nodes: 18, type: "Random", difficulty: "Extreme", desc: "Spiderman would be proud.", hint: "No hints here.", result: "This graph is planar." },
+            { id: 19, name: "Dodecahedron", nodes: 20, type: "Random", difficulty: "Extreme", desc: "A 20-node soccer ball.", hint: "No hints here.", result: "This graph is planar." },
+            { id: 20, name: "3D Grandmaster", nodes: 20, type: "Random", difficulty: "Legendary", desc: "Welcome to the 3rd Dimension. Untangle the graph in 3D space!", hint: "No hints here. You are on your own in 3D.", result: "In 3 dimensions, edges can pass over and under each other without intersecting." }
+        ].map(l => ({ ...l, type: l.type || "Random", isNonPlanar: l.isNonPlanar || false }));
+
+        // HELPERS
+        const renderMath = (text) => {
+            if (!text) return null;
+            let r = text.replace(/\\le/g, '≤').replace(/\\ge/g, '≥');
+            r = r.replace(/K_\{(\d+),(\d+)\}/g, '<span class="math-symbol">K</span><sub class="font-normal text-xs">$1,$2</sub>');
+            r = r.replace(/K_(\d+)/g, '<span class="math-symbol">K</span><sub class="font-normal text-xs">$1</sub>');
+            r = r.replace(/C_(\d+)/g, '<span class="math-symbol">C</span><sub class="font-normal text-xs">$1</sub>');
+            r = r.replace(/W_(\d+)/g, '<span class="math-symbol">W</span><sub class="font-normal text-xs">$1</sub>');
+            r = r.replace(/\\text\{([A-Za-z0-9]+)\}/g, '<span class="math-symbol">$1</span>');
+            r = r.replace(/_\{([^}]+)\}/g, '<sub class="font-normal text-xs">$1</sub>');
+            r = r.replace(/_(\d+)/g, '<sub class="font-normal text-xs">$1</sub>');
+            r = r.replace(/\$/g, '');
+            return <span dangerouslySetInnerHTML={{ __html: r }} />;
+        };
+
+        const doLinesIntersect = (p1, p2, p3, p4) => {
+            const ccw = (a, b, c) => (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
+            return (ccw(p1, p3, p4) !== ccw(p2, p3, p4) && ccw(p1, p2, p3) !== ccw(p1, p2, p4));
+        };
+
+        const pointToSegmentDistance = (px, py, x1, y1, x2, y2) => {
+            const A = px - x1; const B = py - y1; const C = x2 - x1; const D = y2 - y1;
+            const dot = A * C + B * D; const len_sq = C * C + D * D;
+            let param = -1; if (len_sq !== 0) param = dot / len_sq;
+            let xx, yy; if (param < 0) { xx = x1; yy = y1; } else if (param > 1) { xx = x2; yy = y2; } else { xx = x1 + param * C; yy = y1 + param * D; }
+            const dx = px - xx; const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        };
+
+        const findCrossingEdges = (nodes, edges) => {
+            const indices = new Set();
+            for (let i = 0; i < edges.length; i++) {
+                for (let j = i + 1; j < edges.length; j++) {
+                    const e1 = edges[i]; const e2 = edges[j];
+                    if (e1.source === e2.source || e1.source === e2.target || e1.target === e2.source || e1.target === e2.target) continue;
+                    const p1 = nodes[e1.source]; const p2 = nodes[e1.target]; const p3 = nodes[e2.source]; const p4 = nodes[e2.target];
+                    if (doLinesIntersect(p1, p2, p3, p4)) { indices.add(i); indices.add(j); }
+                }
+            }
+            return indices;
+        };
+
+        const generateRandomPlanarGraph = (nodeCount) => {
+            const nodes = [];
+            const width = CANVAS_WIDTH; const height = CANVAS_HEIGHT;
+            const solvedNodes = [];
+            for (let i = 0; i < nodeCount; i++) {
+                const angle = (i / nodeCount) * Math.PI * 2;
+                solvedNodes.push({ x: width/2 + Math.cos(angle)*200, y: height/2 + Math.sin(angle)*200 });
+            }
+            for (let i = 0; i < nodeCount; i++) {
+                nodes.push({ id: i, x: Math.random() * (width - 150) + 75, y: Math.random() * (height - 150) + 75, solvedX: solvedNodes[i].x, solvedY: solvedNodes[i].y });
+            }
+            const edges = [];
+            for(let i=0; i<nodeCount; i++) edges.push({ source: i, target: (i+1)%nodeCount });
+            if (nodeCount > 5) for(let i=2; i<nodeCount-1; i++) edges.push({ source: 0, target: i });
+            if(nodeCount >= 4) {
+                let attempts = 0; let isTangled = false;
+                while(!isTangled && attempts < 100) {
+                    const crossings = findCrossingEdges(nodes, edges);
+                    if (crossings.size > 0) isTangled = true; else { nodes.forEach(n => { n.x = Math.random() * (width - 150) + 75; n.y = Math.random() * (height - 150) + 75; }); }
+                    attempts++;
+                }
+            }
+            return { nodes, edges };
+        };
+
+        const calculateDualGraph = (nodes, edges) => {
+            const adj = {}; nodes.forEach((n, i) => adj[i] = []);
+            const halfEdges = new Map(); 
+            edges.forEach(e => {
+                adj[e.source].push(e.target); adj[e.target].push(e.source);
+                halfEdges.set(`${e.source},${e.target}`, { visited: false }); halfEdges.set(`${e.target},${e.source}`, { visited: false });
+            });
+            for (let u = 0; u < nodes.length; u++) {
+                adj[u].sort((a, b) => {
+                    const angA = Math.atan2(nodes[a].y - nodes[u].y, nodes[a].x - nodes[u].x);
+                    const angB = Math.atan2(nodes[b].y - nodes[u].y, nodes[b].x - nodes[u].x);
+                    return angA - angB;
+                });
+            }
+            const faces = []; const edgeToFaces = new Map(); 
+            for (let u = 0; u < nodes.length; u++) {
+                for (let v of adj[u]) {
+                    if (halfEdges.get(`${u},${v}`)?.visited) continue;
+                    const path = []; let curr = u; let next = v; let sanity = 0;
+                    while (!halfEdges.get(`${curr},${next}`).visited && sanity < 1000) {
+                        halfEdges.get(`${curr},${next}`).visited = true; path.push(curr);
+                        const neighbors = adj[next]; const idx = neighbors.indexOf(curr);
+                        const nextIdx = (idx - 1 + neighbors.length) % neighbors.length; const newNext = neighbors[nextIdx];
+                        edgeToFaces.set(`${curr},${next}`, faces.length);
+                        curr = next; next = newNext; sanity++;
+                    }
+                    let area = 0; let cx = 0, cy = 0;
+                    for(let i=0; i<path.length; i++) {
+                        const n1 = nodes[path[i]]; const n2 = nodes[path[(i+1)%path.length]];
+                        area += (n1.x * n2.y - n2.x * n1.y); cx += n1.x; cy += n1.y;
+                    }
+                    area /= 2; cx /= path.length; cy /= path.length;
+                    if (path.length >= 3) { faces.push({ id: faces.length, vertices: path, x: cx, y: cy, area: area, isOuter: area < 0 }); }
+                }
+            }
+            const outerFace = faces.find(f => f.area < 0) || faces[0];
+            if(outerFace) { outerFace.isOuter = true; outerFace.x = 50; outerFace.y = 50; }
+            const dualEdges = []; const visitedPairs = new Set();
+            edges.forEach(e => {
+                const f1 = edgeToFaces.get(`${e.source},${e.target}`); const f2 = edgeToFaces.get(`${e.target},${e.source}`);
+                if (f1 !== undefined && f2 !== undefined) {
+                    const k = f1 < f2 ? `${f1},${f2}` : `${f2},${f1}`;
+                    if (!visitedPairs.has(k)) { visitedPairs.add(k); dualEdges.push({ source: f1, target: f2 }); }
+                }
+            });
+            const faceAdj = Array(faces.length).fill().map(() => new Set());
+            dualEdges.forEach(de => { faceAdj[de.source].add(de.target); faceAdj[de.target].add(de.source); });
+            faces.forEach(f => {
+                const usedColors = new Set();
+                faceAdj[f.id].forEach(neighborId => { if (faces[neighborId].colorIndex !== undefined) usedColors.add(faces[neighborId].colorIndex); });
+                let c = 0; while(usedColors.has(c)) c++; f.colorIndex = c; f.color = FACE_COLORS[c % FACE_COLORS.length];
+            });
+            const dualFacePolygons = [];
+            nodes.forEach((n, u) => {
+                const surroundingFaceIndices = []; const neighbors = adj[u]; 
+                neighbors.forEach(v => { const fIdx = edgeToFaces.get(`${u},${v}`); if (fIdx !== undefined) surroundingFaceIndices.push(fIdx); });
+                const colorIdx = u % FACE_COLORS.length; 
+                dualFacePolygons.push({ nodeIndex: u, indices: surroundingFaceIndices, color: FACE_COLORS[colorIdx] });
+            });
+            return { faces, dualEdges, dualFacePolygons };
+        };
+
+        // COMPONENTS
+        const MenuScreen = ({ onStart }) => (
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-center p-6 text-slate-100">
+                <div className="mb-8 animate-float"><Icons.Zap size={64} className="text-indigo-400 mx-auto mb-4" /><h1 className="text-6xl font-black bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">TEST YOUR MIGHT</h1><p className="text-xl text-slate-400 mt-4 font-light">Planar Graph Challenge</p></div>
+                <button onClick={onStart} className="group relative px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xl shadow-[0_0_30px_rgba(79,70,229,0.5)] transition-all hover:scale-105 overflow-hidden cursor-pointer"><span className="relative z-10 flex items-center gap-2">ENTER THE GAUNTLET <Icons.Play fill="currentColor" /></span></button>
+            </div>
+        );
+
+        const ResultsScreen = ({ score, onRestart }) => (
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-center p-6 text-slate-100">
+                 <Icons.Trophy size={64} className="text-yellow-400 mb-4 mx-auto animate-bounce" />
+                 <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-8">{score} PTS</div>
+                 <button onClick={onRestart} className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"><Icons.RotateCcw size={20} /> Play Again</button>
+            </div>
+        );
+
+        const EulerTracker = ({ v, e, crossings }) => {
+            const [isExpanded, setIsExpanded] = useState(true);
+            const targetFaces = Math.max(0, 2 - v + e);
+            const color = `hsl(${Math.max(0, 1 - (crossings / 10)) * 120}, 80%, 50%)`;
+            return (
+                <div className={`absolute top-4 right-4 z-20 euler-glass text-slate-100 rounded-xl transition-all duration-500 border-t-2 overflow-hidden ${isExpanded?'w-64 h-[200px]':'w-32 h-10 cursor-pointer'}`} style={{borderTopColor:color, boxShadow:`0 8px 32px -8px ${color}`}} onClick={()=>!isExpanded&&setIsExpanded(true)}>
+                    {isExpanded ? (<div className="w-full h-full p-4 cursor-default"><div className="flex justify-between items-center mb-2"><h3 className="text-xs font-bold uppercase text-slate-400">Euler's Formula</h3><button onClick={(e)=>{e.stopPropagation();setIsExpanded(false)}} className="text-slate-500 hover:text-white cursor-pointer"><Icons.ChevronUp size={16}/></button></div><div className="font-mono text-center py-2 text-lg font-bold border-b border-slate-700/50 mb-2"><span className="text-indigo-400">V</span> - <span className="text-pink-400">E</span> + <span className="text-amber-400">F</span> = 2</div><div className="grid grid-cols-3 gap-2 text-center text-xs mb-2"><div className="bg-slate-800/50 p-1 rounded"><span className="block text-indigo-400 font-bold">V</span>{v}</div><div className="bg-slate-800/50 p-1 rounded"><span className="block text-pink-400 font-bold">E</span>{e}</div><div className="bg-slate-800/50 p-1 rounded"><span className="block text-amber-400 font-bold">F</span>{targetFaces}</div></div><div className="text-center text-xs font-bold" style={{color}}>{crossings===0?"SOLVED":`${crossings} CROSSINGS`}</div></div>) : (<div className="flex items-center justify-center h-full gap-2"><div className="w-2 h-2 rounded-full animate-pulse" style={{backgroundColor:color}}></div><span className="text-xs font-bold text-slate-300">Euler Status</span></div>)}
+                </div>
+            );
+        };
+
+        const SphereGraphViewer = ({ nodes, edges, crossingIndices, focusEdgeIndex, onInspectIn2D, levelId, solved, failed, isPostWin }) => {
+            const mountRef = useRef(null);
+            const [isDragging3D, setIsDragging3D] = useState(false);
+
+            useEffect(() => {
+                if(!mountRef.current) return;
+                const width = mountRef.current.clientWidth; const height = mountRef.current.clientHeight;
+                const scene = new THREE.Scene(); scene.background = new THREE.Color('#0f172a');
+                const camera = new THREE.PerspectiveCamera(75, width/height, 0.1, 1000); camera.position.z = 250;
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setSize(width, height);
+                mountRef.current.innerHTML = ''; mountRef.current.appendChild(renderer.domElement);
+                const controls = new THREE.OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.autoRotate = true;
+                const onDown = () => setIsDragging3D(true); const onUp = () => setIsDragging3D(false);
+                renderer.domElement.addEventListener('pointerdown', onDown); renderer.domElement.addEventListener('pointerup', onUp);
+                const group = new THREE.Group(); scene.add(group);
+                scene.add(new THREE.AmbientLight(0xffffff, 0.5)); const pl = new THREE.PointLight(0x818cf8, 1.5); pl.position.set(100,100,100); scene.add(pl);
+                const sphereMat = new THREE.MeshPhongMaterial({ color: 0x1e293b, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false });
+                group.add(new THREE.Mesh(new THREE.SphereGeometry(98, 32, 32), sphereMat));
+                const wireMat = new THREE.MeshBasicMaterial({ color: 0x6366f1, wireframe: true, transparent: true, opacity: 0.05 });
+                group.add(new THREE.Mesh(new THREE.SphereGeometry(100, 24, 24), wireMat));
+                const map = (x, y) => { const u = x / 1000; const v = y / 600; const phi = u * Math.PI * 2; const theta = (v - 0.5) * Math.PI; return new THREE.Vector3(100 * Math.cos(theta) * Math.sin(phi), 100 * Math.sin(theta), 100 * Math.cos(theta) * Math.cos(phi)); };
+                const nodeGeo = new THREE.SphereGeometry(4, 16, 16); const nodeMat = new THREE.MeshPhongMaterial({ color: 0xf8fafc }); const nodeMatFocus = new THREE.MeshPhongMaterial({ color: 0xfacc15, emissive: 0xfbbf24 });
+                nodes.forEach((n, i) => { let isFocus = focusEdgeIndex !== null && edges[focusEdgeIndex] && (edges[focusEdgeIndex].source === i || edges[focusEdgeIndex].target === i); const mesh = new THREE.Mesh(nodeGeo, isFocus ? nodeMatFocus : nodeMat); mesh.position.copy(map(n.x, n.y)); if(isFocus) mesh.scale.setScalar(1.5); group.add(mesh); });
+                const lineMat = new THREE.LineBasicMaterial({ color: 0x86efac, transparent: true, opacity: 0.6 }); const lineCross = new THREE.LineBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.8 }); const lineFocus = new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 3 }); const lineNeutral = new THREE.LineBasicMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.6 }); const lineWhite = new THREE.LineBasicMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.8 }); const hideIndicators = levelId >= 18 && !solved && !failed;
+                edges.forEach((e, i) => { const p1 = map(nodes[e.source].x, nodes[e.source].y); const p2 = map(nodes[e.target].x, nodes[e.target].y); const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]); let mat = lineMat; if(isPostWin) mat = lineWhite; else if(focusEdgeIndex === i) mat = lineFocus; else if(hideIndicators) mat = lineNeutral; else if(crossingIndices.has(i)) mat = lineCross; group.add(new THREE.Line(geo, mat)); });
+                if(focusEdgeIndex !== null && edges[focusEdgeIndex]) { const e = edges[focusEdgeIndex]; const p1 = map(nodes[e.source].x, nodes[e.source].y); const p2 = map(nodes[e.target].x, nodes[e.target].y); const mid = p1.clone().add(p2).multiplyScalar(0.5).normalize().multiplyScalar(100); const target = mid.clone().add(mid.clone().normalize().multiplyScalar(60)); controls.autoRotate = false; new TWEEN.Tween(camera.position).to({x:target.x, y:target.y, z:target.z}, 1500).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(()=>controls.target.lerp(mid, 0.1)).start(); }
+                const animate = () => { requestAnimationFrame(animate); if(window.TWEEN) window.TWEEN.update(); controls.update(); renderer.render(scene, camera); }; animate();
+                return () => { renderer.domElement.removeEventListener('pointerdown', onDown); renderer.domElement.removeEventListener('pointerup', onUp); renderer.dispose(); mountRef.current && (mountRef.current.innerHTML = ''); };
+            }, [nodes, edges, crossingIndices, focusEdgeIndex, levelId, solved, failed, isPostWin]);
+
+            return (<div className="w-full h-full relative bg-black"><div ref={mountRef} className={`w-full h-full ${isDragging3D ? 'cursor-grabbing' : 'cursor-grab'}`} />{focusEdgeIndex !== null && <div className="absolute bottom-4 right-4 flex gap-2"><button className="bg-sky-600 text-white px-4 py-2 rounded font-bold shadow hover:bg-sky-500 cursor-pointer" onClick={()=>onInspectIn2D([focusEdgeIndex])}>Back to 2D</button></div>}</div>);
+        };
+
+        const ThreeDGraphEditor = ({ nodes, edges, onCollisionUpdate, isPostWin }) => {
+            const mountRef = useRef(null); const nodesRef = useRef([]); const [intersectingEdges, setIntersectingEdges] = useState(new Set()); const [isDragging, setIsDragging] = useState(false); const [hoveredNode, setHoveredNode] = useState(null);
+            useEffect(() => { nodesRef.current = nodes.map(n => ({ id: n.id, pos: new THREE.Vector3((Math.random()-0.5)*150, (Math.random()-0.5)*150, (Math.random()-0.5)*150) })); }, [nodes]);
+            const closestDistanceBetweenSegments = useCallback((p1, p2, p3, p4) => { const u = p2.clone().sub(p1); const v = p4.clone().sub(p3); const w = p1.clone().sub(p3); const a = u.dot(u); const b = u.dot(v); const c = v.dot(v); const d = u.dot(w); const e = v.dot(w); const D = a*c - b*b; let sc, sN, sD = D; let tc, tN, tD = D; if (D < 0.0001) { sN = 0.0; sD = 1.0; tN = e; tD = c; } else { sN = (b*e - c*d); tN = (a*e - b*d); if (sN < 0.0) { sN = 0.0; tN = e; tD = c; } else if (sN > sD) { sN = sD; tN = e + b; tD = c; } } if (tN < 0.0) { tN = 0.0; if (-d < 0.0) sN = 0.0; else if (-d > a) sN = sD; else { sN = -d; sD = a; } } else if (tN > tD) { tN = tD; if ((-d + b) < 0.0) sN = 0; else if ((-d + b) > a) sN = sD; else { sN = (-d + b); sD = a; } } sc = (Math.abs(sN) < 0.0001 ? 0.0 : sN / sD); tc = (Math.abs(tN) < 0.0001 ? 0.0 : tN / tD); const dP = w.add(u.multiplyScalar(sc)).sub(v.multiplyScalar(tc)); return dP.length(); }, []);
+            const checkIntersections = useCallback(() => { const currentNodes = nodesRef.current; const newIntersections = new Set(); const threshold = 4.0; for(let i=0; i<edges.length; i++) { const e1 = edges[i]; const p1 = currentNodes[e1.source].pos; const p2 = currentNodes[e1.target].pos; for(let j=i+1; j<edges.length; j++) { const e2 = edges[j]; if(e1.source === e2.source || e1.source === e2.target || e1.target === e2.source || e1.target === e2.target) continue; const p3 = currentNodes[e2.source].pos; const p4 = currentNodes[e2.target].pos; const dist = closestDistanceBetweenSegments(p1, p2, p3, p4); if(dist < threshold) { newIntersections.add(i); newIntersections.add(j); } } } setIntersectingEdges(newIntersections); if (onCollisionUpdate) onCollisionUpdate(newIntersections.size === 0); }, [edges, onCollisionUpdate, closestDistanceBetweenSegments]);
+            useEffect(() => {
+                if(!mountRef.current) return;
+                const width = mountRef.current.clientWidth; const height = mountRef.current.clientHeight;
+                const scene = new THREE.Scene(); scene.background = new THREE.Color('#0f172a'); 
+                const camera = new THREE.PerspectiveCamera(60, width/height, 0.1, 1000); camera.position.set(0, 0, 200);
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setSize(width, height);
+                mountRef.current.innerHTML=''; mountRef.current.appendChild(renderer.domElement);
+                const controls = new THREE.OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controlsRef.current = controls;
+                scene.add(new THREE.AmbientLight(0xffffff, 0.6)); const pl = new THREE.PointLight(0xffffff, 1); pl.position.set(100,100,100); scene.add(pl);
+                const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2(); const plane = new THREE.Plane(new THREE.Vector3(0,0,1), 0); let draggingIdx = -1;
+                const onDown = (e) => { const rect = renderer.domElement.getBoundingClientRect(); mouse.x = ((e.clientX - rect.left)/width)*2-1; mouse.y = -((e.clientY - rect.top)/height)*2+1; raycaster.setFromCamera(mouse, camera); const hits = raycaster.intersectObjects(scene.children); const hit = hits.find(h => h.object.userData.isNode); if(hit) { draggingIdx = hit.object.userData.id; controls.enabled = false; plane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()), hit.point); setIsDragging(true); } };
+                const onMove = (e) => { const rect = renderer.domElement.getBoundingClientRect(); mouse.x = ((e.clientX - rect.left)/width)*2-1; mouse.y = -((e.clientY - rect.top)/height)*2+1; raycaster.setFromCamera(mouse, camera); if(draggingIdx !== -1) { const target = new THREE.Vector3(); raycaster.ray.intersectPlane(plane, target); if(target) nodesRef.current[draggingIdx].pos.copy(target); } else { const hits = raycaster.intersectObjects(scene.children); const hit = hits.find(h => h.object.userData.isNode); setHoveredNode(hit ? hit.object.userData.id : null); } };
+                const onUp = () => { if(draggingIdx !== -1) { draggingIdx = -1; controls.enabled = true; setIsDragging(false); checkIntersections(); } };
+                renderer.domElement.addEventListener('pointerdown', onDown); window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                const animate = () => {
+                    requestAnimationFrame(animate); controls.update();
+                    for(let i=scene.children.length-1; i>=0; i--) { const o=scene.children[i]; if(o.type==='Mesh' || o.type==='Line') scene.remove(o); }
+                    const nodeGeo = new THREE.SphereGeometry(3, 16, 16); const nodeMat = new THREE.MeshPhongMaterial({ color: 0xf8fafc }); const nodeMatFocus = new THREE.MeshPhongMaterial({ color: 0xfacc15 });
+                    nodesRef.current.forEach((n,i) => { const mesh = new THREE.Mesh(nodeGeo, draggingIdx===i?nodeMatFocus:nodeMat); mesh.position.copy(n.pos); mesh.userData = { isNode:true, id:i }; scene.add(mesh); });
+                    const lineRed = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 }); const lineGreen = new THREE.LineBasicMaterial({ color: 0x22c55e, linewidth: 2 }); const lineWhite = new THREE.LineBasicMaterial({ color: 0xe2e8f0, linewidth: 2, transparent: true, opacity: 0.8 });
+                    edges.forEach((e,i) => { const p1 = nodesRef.current[e.source].pos; const p2 = nodesRef.current[e.target].pos; const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]); let mat; if(isPostWin) mat = lineWhite; else { mat = intersectingEdges.has(i) ? lineRed : lineGreen; } scene.add(new THREE.Line(geo, mat)); });
+                    renderer.render(scene, camera);
+                };
+                animate(); setTimeout(checkIntersections, 200);
+                return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); if(renderer.domElement) renderer.domElement.removeEventListener('pointerdown', onDown); if(mountRef.current) mountRef.current.innerHTML = ''; renderer.dispose(); };
+            }, [edges, checkIntersections, isPostWin, intersectingEdges]);
+            return <div ref={mountRef} className={`w-full h-full ${isDragging ? 'cursor-grabbing' : (hoveredNode!==null ? 'cursor-grab' : 'cursor-grab')}`} />;
+        };
+
+        const GameLevel = ({ level, onComplete, currentScore }) => {
+            const canvasRef = useRef(null);
+            const [nodes, setNodes] = useState([]);
+            const [edges, setEdges] = useState([]);
+            const [crossingIndices, setCrossingIndices] = useState(new Set());
+            const [viewMode, setViewMode] = useState("2D");
+            const [feedback, setFeedback] = useState(null);
+            const [solved, setSolved] = useState(false);
+            const [failed, setFailed] = useState(false);
+            const [isTransitioning, setIsTransitioning] = useState(false);
+            const [highlightedConflict, setHighlightedConflict] = useState([]);
+            const [targetEdgeFor3D, setTargetEdgeFor3D] = useState(null);
+            const [showLevelNotification, setShowLevelNotification] = useState(false);
+            const [is3DCollisionFree, setIs3DCollisionFree] = useState(false);
+            const [dualData, setDualData] = useState(null);
+            const [showDual, setShowDual] = useState(false);
+            const [showDualInfo, setShowDualInfo] = useState(false);
+            const [showSuccessModal, setShowSuccessModal] = useState(false);
+            const [showFailureModal, setShowFailureModal] = useState(false);
+
+            const [draggedNodeId, setDraggedNodeId] = useState(null);
+            const [hoveredNodeId, setHoveredNodeId] = useState(null);
+            const [hoveredEdgeIndex, setHoveredEdgeIndex] = useState(null);
+            const [viewTransform, setViewTransform] = useState({x:0, y:0, k:1});
+            const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
+            const [lastPointer, setLastPointer] = useState({x:0, y:0});
+            
+            const resultDetails = useMemo(() => {
+                const baseReason = level.result || "No specific mathematical reason provided.";
+                return { title: level.isNonPlanar ? "Why it is NON-PLANAR:" : "Why it is PLANAR:", message: baseReason };
+            }, [level]);
+
+            useEffect(() => {
+                setFeedback(null); setSolved(false); setFailed(false); setShowSuccessModal(false); setShowFailureModal(false); setIsTransitioning(false); setViewMode("2D"); setTargetEdgeFor3D(null); setDualData(null); setIs3DCollisionFree(false); 
+                setShowDual(false); 
+                setShowLevelNotification(true); const t = setTimeout(() => setShowLevelNotification(false), 3500); 
+                let data;
+                if (level.type === "K5" || level.type === "K33") {
+                    const n = level.type==="K5"?5:6; let ns=[], es=[];
+                    for(let i=0;i<n;i++) ns.push({id:i, x:Math.random()*800+100, y:Math.random()*400+100, solvedX:0, solvedY:0});
+                    if(level.type==="K5") { for(let i=0;i<5;i++) for(let j=i+1;j<5;j++) es.push({source:i, target:j}); } else { for(let i=0;i<3;i++) for(let j=3;j<6;j++) es.push({source:i, target:j}); }
+                    data = {nodes:ns, edges:es};
+                } else { data = generateRandomPlanarGraph(level.nodes); }
+                setNodes(data.nodes); setEdges(data.edges);
+                return () => clearTimeout(t);
+            }, [level]);
+
+            useEffect(() => {
+                if(nodes.length===0 || failed) return;
+                if(level.id === 20) return;
+                const crossings = findCrossingEdges(nodes, edges); setCrossingIndices(crossings);
+                if (!level.isNonPlanar && crossings.size === 0 && !solved && !isTransitioning && nodes.length > 0) {
+                    setShowLevelNotification(false); 
+                    const t = setTimeout(() => {
+                        setIsTransitioning(true); setDraggedNodeId(null);
+                        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                        setTimeout(() => { setSolved(true); setShowSuccessModal(true); }, 1500);
+                    }, 1500);
+                    return () => clearTimeout(t);
+                }
+            }, [nodes, edges, solved, level, isTransitioning, failed]);
+
+            useEffect(() => { 
+                if(showDual && level.id !== 20) {
+                    setDualData(calculateDualGraph(nodes, edges));
+                } else {
+                    setDualData(null);
+                }
+            }, [showDual, nodes, edges, level.id]);
+
+            useEffect(() => { if(highlightedConflict.length>0) { const t=setTimeout(()=>setHighlightedConflict([]),1500); return ()=>clearTimeout(t); } }, [highlightedConflict]);
+
+            const handleLoss = (reason) => { setFailed(true); setShowLevelNotification(false); setIsTransitioning(true); setDraggedNodeId(null); setFeedback({type: 'error', msg: reason || 'Hard Luck! Incorrect answer.'}); setShowFailureModal(true); };
+            const submitPlanar = () => {
+                if(solved || isTransitioning || failed) return;
+                if(level.id === 20) {
+                    if(is3DCollisionFree) { setIsTransitioning(true); setFeedback({type:'success', msg:'Correct! 3D Graph Untangled.'}); confetti({particleCount:200, spread:100, origin:{y:0.6}}); setTimeout(() => { setSolved(true); setShowSuccessModal(true); }, 2000); } 
+                    else { handleLoss("Incorrect. The graph still has intersecting edges in 3D space."); }
+                    return;
+                }
+                if(level.isNonPlanar) { handleLoss(`You answered Planar. Incorrect. This graph is mathematically NON-PLANAR.`); }
+                else if(crossingIndices.size === 0) { setIsTransitioning(true); setDraggedNodeId(null); setFeedback({type:'success', msg:'Correct!'}); confetti({particleCount:100, spread:70}); setTimeout(() => { setSolved(true); setShowSuccessModal(true); }, 2000); }
+                else { setFeedback({type:'info', msg:'Incorrect. Lines still crossing.'}); }
+            };
+            const submitNonPlanar = () => {
+                if(solved || isTransitioning || failed) return;
+                if(level.id === 20) { handleLoss(`Incorrect. In 3D space, ANY graph can be untangled (Planar).`); return; }
+                if(level.isNonPlanar) { setIsTransitioning(true); setDraggedNodeId(null); confetti({particleCount:100, spread:70}); setTimeout(() => { setSolved(true); setShowSuccessModal(true); }, 2000); }
+                else { handleLoss(`You answered Non-Planar. Incorrect. This graph is PLANAR and can be untangled.`); }
+            };
+            const handleGiveUp = () => {
+                setFeedback({type:'error', msg: "Hard Luck! You gave up."});
+                if(level.id === 20) { setFailed(true); setIsTransitioning(true); setShowFailureModal(true); return; }
+                if(level.isNonPlanar) { setFailed(true); setIsTransitioning(true); setShowFailureModal(true); }
+                else {
+                    setIsTransitioning(true);
+                    let p=0; const start=nodes.map(n=>({x:n.x, y:n.y}));
+                    const tick = () => {
+                        p+=0.01; if(p>1) p=1; const ease = 1 - Math.pow(1 - p, 3);
+                        setNodes(prev=>prev.map((n,i)=>({ ...n, x: start[i].x + (n.solvedX - start[i].x)*ease, y: start[i].y + (n.solvedY - start[i].y)*ease })));
+                        if(p<1) requestAnimationFrame(tick); else { setSolved(true); setShowFailureModal(true); }
+                    }; tick();
+                }
+            };
+            const handleInspectIn2D = (conflictIndices) => { setViewMode("2D"); setHighlightedConflict(conflictIndices); };
+            const getPos = (e) => { const r = canvasRef.current.getBoundingClientRect(); const sx = (e.clientX - r.left)*(1000/r.width); const sy = (e.clientY - r.top)*(600/r.height); return { x: (sx - viewTransform.x)/viewTransform.k, y: (sy - viewTransform.y)/viewTransform.k }; };
+            
+            const isPostWin = solved && !showSuccessModal;
+            const canInteract = isPostWin || (!solved && !isTransitioning && !failed);
+
+            const handleDown = (e) => {
+                if(!canInteract) return;
+                const p = getPos(e.touches?e.touches[0]:e);
+                const nid = nodes.findIndex(n => Math.sqrt((n.x-p.x)**2 + (n.y-p.y)**2) < 25);
+                if(nid !== -1) { setDraggedNodeId(nid); e.target.setPointerCapture(e.pointerId); return; }
+                let eid = null; for(let i=0; i<edges.length; i++) { const u = nodes[edges[i].source]; const v = nodes[edges[i].target]; if(pointToSegmentDistance(p.x, p.y, u.x, u.y, v.x, v.y) < 15) { eid = i; break; } }
+                if(eid !== null) { setTargetEdgeFor3D(eid); setViewMode("3D"); return; }
+                setIsDraggingCanvas(true); setLastPointer({x:e.clientX, y:e.clientY}); e.target.setPointerCapture(e.pointerId); 
+            };
+            const handleMove = (e) => {
+                if(viewMode==='2D') {
+                    const p = getPos(e.touches?e.touches[0]:e);
+                    if(draggedNodeId!==null) { setNodes(prev => { const n=[...prev]; n[draggedNodeId]={...n[draggedNodeId], x:p.x, y:p.y}; return n; }); }
+                    else if(isDraggingCanvas) { const cx = (e.touches?e.touches[0]:e).clientX; const cy = (e.touches?e.touches[0]:e).clientY; setViewTransform(v => ({...v, x: v.x+(cx-lastPointer.x), y: v.y+(cy-lastPointer.y)})); setLastPointer({x:cx, y:cy}); }
+                    else {
+                        if (!canInteract) return;
+                        let nid = nodes.findIndex(n => Math.sqrt((n.x-p.x)**2 + (n.y-p.y)**2) < 25);
+                        if(nid!==hoveredNodeId) setHoveredNodeId(nid);
+                        let eid = null; if(nid===-1) { for(let i=0; i<edges.length; i++) { const u=nodes[edges[i].source]; const v=nodes[edges[i].target]; if(pointToSegmentDistance(p.x, p.y, u.x, u.y, v.x, v.y) < 15) { eid=i; break; } } }
+                        setHoveredEdgeIndex(eid);
+                    }
+                }
+                if(canvasRef.current) {
+                    if (isDraggingCanvas || draggedNodeId !== null) canvasRef.current.className = "w-full h-full touch-none cursor-grabbing";
+                    else if (hoveredNodeId !== null) canvasRef.current.className = "w-full h-full touch-none cursor-grab";
+                    else if (hoveredEdgeIndex !== null) canvasRef.current.className = "w-full h-full touch-none cursor-pointer";
+                    else canvasRef.current.className = "w-full h-full touch-none cursor-default";
+                }
+            };
+            const handleUp = (e) => { setDraggedNodeId(null); setIsDraggingCanvas(false); if(e.target.releasePointerCapture) e.target.releasePointerCapture(e.pointerId); };
+            const handleWheel = (e) => { e.preventDefault(); const s = e.deltaY > 0 ? 0.9 : 1.1; setViewTransform(p => ({ ...p, k: Math.max(0.5, Math.min(3, p.k*s)) })); };
+            const handleLeave = () => { setDraggedNodeId(null); setIsDraggingCanvas(false); setHoveredNodeId(null); setHoveredEdgeIndex(null); };
+
+            useEffect(() => {
+                if(viewMode!=='2D' || !canvasRef.current || level.id === 20) return;
+                const ctx = canvasRef.current.getContext('2d'); ctx.clearRect(0,0,1000,600); ctx.save(); ctx.translate(viewTransform.x, viewTransform.y); ctx.scale(viewTransform.k, viewTransform.k);
+                
+                // Render Dual Graph Face Backgrounds (Stained Glass)
+                if(showDual && dualData) {
+                    ctx.globalAlpha = 1.0;
+                    dualData.dualFacePolygons.forEach(poly => {
+                        if(poly.indices.length < 3) return;
+                        const startNode = dualData.faces[poly.indices[0]];
+                        if(!startNode) return;
+                        ctx.beginPath(); ctx.moveTo(startNode.x, startNode.y);
+                        for(let k=1; k<poly.indices.length; k++) { const nIdx = poly.indices[k]; const n = dualData.faces[nIdx]; if(n) ctx.lineTo(n.x, n.y); }
+                        ctx.closePath(); ctx.fillStyle = poly.color; ctx.fill();
+                    });
+                    ctx.globalAlpha = 0.1; 
+                } else {
+                    ctx.globalAlpha = 1.0;
+                }
+
+                const hideIndicators = (level.id >= 18 && level.id < 20) && !solved && !failed;
+
+                edges.forEach((e,i) => {
+                    const u=nodes[e.source]; const v=nodes[e.target]; const cross = crossingIndices.has(i); const highlight = highlightedConflict.includes(i); const hover = i===hoveredEdgeIndex;
+                    ctx.beginPath(); ctx.moveTo(u.x, u.y); ctx.lineTo(v.x, v.y); ctx.lineWidth = (highlight||hover)?4:(cross?3:2);
+                    
+                    if(isPostWin) { ctx.strokeStyle = '#e2e8f0'; } 
+                    else if (hideIndicators && !highlight && !hover) ctx.strokeStyle = '#cbd5e1'; 
+                    else ctx.strokeStyle = highlight ? '#facc15' : (hover ? '#cbd5e1' : (cross ? '#ef4444' : '#22c55e'));
+                    
+                    if (!isPostWin && !hideIndicators) {
+                        if (cross) { ctx.shadowBlur = 8; ctx.shadowColor = '#ef4444'; }
+                        else { ctx.shadowBlur = 6; ctx.shadowColor = '#22c55e'; }
+                    }
+                    if(hover) { ctx.shadowBlur=10; ctx.shadowColor='#fde047'; }
+                    
+                    ctx.stroke(); ctx.shadowBlur=0;
+                });
+                nodes.forEach((n,i) => {
+                    const hover = i===hoveredNodeId || i===draggedNodeId; const radius = hover?9:7; 
+                    ctx.beginPath(); ctx.arc(n.x, n.y, radius, 0, Math.PI*2); ctx.fillStyle='#f1f5f9'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=hover?'#6366f1':'#475569';
+                    if(hover) { ctx.shadowBlur=12; ctx.shadowColor='#818cf8'; }
+                    ctx.stroke(); ctx.shadowBlur=0;
+                });
+
+                if(showDual && dualData) {
+                    ctx.globalAlpha = 1.0; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+                    dualData.dualEdges.forEach(de => {
+                        const f1 = dualData.faces[de.source]; const f2 = dualData.faces[de.target];
+                        if(f1 && f2) { ctx.beginPath(); ctx.moveTo(f1.x, f1.y); ctx.lineTo(f2.x, f2.y); ctx.stroke(); }
+                    });
+                    ctx.setLineDash([]);
+                    dualData.faces.forEach(f => { ctx.beginPath(); ctx.arc(f.x, f.y, 4, 0, Math.PI*2); ctx.fillStyle = "#fff"; ctx.fill(); });
+                }
+
+                ctx.restore();
+            }, [nodes, edges, crossingIndices, viewMode, hoveredEdgeIndex, viewTransform, highlightedConflict, showDual, dualData, hoveredNodeId, solved, failed, level.id, isPostWin]);
+
+            const getPoints = () => { if (level.id === 20) return 300; if (level.id >= 18) return 200; return 100; };
+            const next = () => onComplete(getPoints()); const retry = () => onComplete(0);
+            const closeModal = () => { 
+                if (showFailureModal) { setShowFailureModal(false); setIsTransitioning(false); }
+                if (showSuccessModal) { setShowSuccessModal(false); setIsTransitioning(false); } 
+            };
+
+            const sidebarDisabled = showSuccessModal || showFailureModal;
+            const nextBtnDisabled = !isPostWin; 
+
+            return (
+                <div className="flex flex-col h-screen bg-slate-950 text-slate-100 font-sans">
+                    <div className={`fixed top-0 left-0 right-0 z-50 flex justify-center transition-transform duration-500 ${showLevelNotification ? 'translate-y-24' : '-translate-y-full'}`}><div className="bg-slate-800/90 backdrop-blur-md border border-indigo-500/50 text-white px-8 py-4 rounded-full shadow-2xl flex flex-col items-center"><h3 className="text-sm font-bold uppercase tracking-widest text-indigo-400">{level.name}</h3><p className="text-lg font-medium text-slate-200">{level.desc}</p></div></div>
+                    <div className="h-16 border-b border-slate-800 bg-slate-900 flex items-center justify-between px-6 z-20">
+                        <div className="flex items-center gap-4"><div className="flex items-end mr-2 bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50"><div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 leading-none mr-1">{level.id < 10 ? `0${level.id}` : level.id}</div><span className="text-sm text-slate-500 font-bold mb-1">/ {LEVELS.length}</span></div><div className="h-10 w-px bg-slate-800 mx-2"></div><div><h2 className="font-bold text-lg text-indigo-400">{level.name}</h2><p className="text-xs text-slate-400 font-medium uppercase tracking-wide">{level.difficulty}</p></div></div>
+                        <div className="font-bold text-xl text-yellow-400">{currentScore} PTS</div>
+                    </div>
+                    <div className="flex-1 flex relative overflow-hidden">
+                        <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4 z-10">
+                            {level.id !== 20 && (<div className="relative bg-slate-800 p-1.5 rounded-xl flex mb-2 h-12 shadow-inner border border-slate-700/50"><div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] toggle-gradient rounded-lg transition-transform duration-300 ease-out shadow-lg z-0 ${viewMode === '3D' ? 'translate-x-[100%]' : 'translate-x-0'}`}></div><button onClick={()=>{setViewMode("2D");setTargetEdgeFor3D(null)}} className={`relative z-10 flex-1 rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition-colors duration-200 cursor-pointer ${viewMode === "2D" ? "text-white" : "text-slate-400 hover:text-white"}`}><Icons.GridIcon size={18} /> 2D Editor</button><button onClick={()=>{setViewMode("3D");setTargetEdgeFor3D(null)}} className={`relative z-10 flex-1 rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition-colors duration-200 cursor-pointer ${viewMode === "3D" ? "text-white" : "text-slate-400 hover:text-white"}`}><Icons.Cube size={18} /> 3D Sphere</button></div>)}
+                            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 relative overflow-hidden mt-2"><div className="flex items-center gap-2 mb-2 text-slate-400"><Icons.BookOpen size={16} /><span className="text-xs font-bold uppercase tracking-wider">CHALLENGE</span></div><p className="text-sm font-semibold text-slate-200 leading-relaxed">{level.desc}</p></div>
+                            {level.id < 16 && (<div className="bg-indigo-950/30 border border-indigo-500/20 rounded-xl p-4 relative overflow-hidden mt-4"><div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div><div className="flex items-center gap-2 mb-2 text-indigo-400"><Icons.Lightbulb size={16} /><span className="text-xs font-bold uppercase tracking-wider">HINT</span></div><p className="text-xs text-slate-400 leading-relaxed">{level.hint}</p></div>)}
+                            <div className="mt-auto flex flex-col gap-2">
+                                {!solved && !failed && !isTransitioning && level.id !== 20 && <><button onClick={submitPlanar} className="w-full py-3 rounded-xl shadow-sm btn-action planar cursor-pointer">Planar</button><button onClick={submitNonPlanar} className="w-full py-3 rounded-xl shadow-sm btn-action nonplanar cursor-pointer">Not Planar</button><button onClick={handleGiveUp} className="py-2 text-xs text-slate-500 hover:text-white btn-action giveup cursor-pointer">Give Up</button></>}
+                                {!solved && !failed && !isTransitioning && level.id === 20 && (<><button onClick={submitPlanar} className="w-full py-3 rounded-xl shadow-sm btn-action planar cursor-pointer">Check Planar</button><button onClick={submitNonPlanar} className="w-full py-3 rounded-xl shadow-sm btn-action nonplanar cursor-pointer">Not Planar</button><button onClick={handleGiveUp} className="py-2 text-xs text-slate-500 hover:text-white btn-action giveup cursor-pointer">Give Up</button></>)}
+                                {(solved || isTransitioning) && !failed && (<>
+                                    {viewMode === "2D" && !level.isNonPlanar && level.id !== 20 && (
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <button onClick={()=>setShowDual(!showDual)} disabled={sidebarDisabled} className={`flex-1 py-3 rounded-xl shadow-sm btn-action dual cursor-pointer flex items-center justify-center gap-2 ${sidebarDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}><Icons.Hexagon size={16}/> Toggle Dual</button>
+                                            <button onClick={()=>setShowDualInfo(true)} disabled={sidebarDisabled} className={`p-3 rounded-xl shadow-sm btn-action giveup cursor-pointer text-slate-400 hover:text-white ${sidebarDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}><Icons.Help size={16}/></button>
+                                        </div>
+                                    )}
+                                    <button onClick={next} disabled={nextBtnDisabled} className={`w-full py-4 text-white font-bold rounded-xl shadow-lg btn-action next cursor-pointer animate-pulse flex justify-center items-center gap-2 ${nextBtnDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}>Next Level <Icons.ArrowRight size={20}/></button>
+                                </>)}
+                                {failed && <button onClick={retry} className="py-4 bg-slate-700 hover:bg-slate-600 font-bold rounded cursor-pointer">Go to Next Level (0 Pts)</button>}
+                            </div>
+                        </aside>
+                        <section className="flex-1 relative bg-slate-950 cursor-default">
+                             {level.id !== 20 && viewMode==='2D' && (<><EulerTracker v={nodes.length} e={edges.length} crossings={crossingIndices.size/2} /><canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="w-full h-full touch-none cursor-default" onPointerDown={handleDown} onPointerMove={handleMove} onPointerUp={handleUp} onPointerLeave={handleLeave} onWheel={handleWheel} /></>)}
+                             {level.id !== 20 && viewMode==='3D' && (<SphereGraphViewer nodes={nodes} edges={edges} crossingIndices={crossingIndices} focusEdgeIndex={targetEdgeFor3D} clearFocus={()=>setTargetEdgeFor3D(null)} onInspectIn2D={(ids)=>{setViewMode('2D'); setHighlightedConflict(ids);}} levelId={level.id} solved={solved} failed={failed} isPostWin={isPostWin} />)}
+                             {level.id === 20 && (<ThreeDGraphEditor nodes={nodes} edges={edges} onCollisionUpdate={setIs3DCollisionFree} isPostWin={isPostWin} />)}
+                             
+                             {/* MODALS */}
+                             {showDualInfo && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in zoom-in duration-200" onClick={()=>setShowDualInfo(false)}>
+                                    <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl max-w-md text-left shadow-2xl" onClick={e=>e.stopPropagation()}>
+                                        <h3 className="text-xl font-bold text-amber-400 mb-2 flex items-center gap-2"><Icons.Hexagon size={24}/> What is a Dual Graph?</h3>
+                                        <p className="text-slate-300 mb-4 text-sm leading-relaxed">
+                                            A dual graph represents the adjacency between regions (faces). Every <strong>face</strong> of the original graph becomes a <strong>node</strong> in the dual graph. Edges connect these new nodes if the original faces share a boundary.
+                                        </p>
+                                        <h4 className="font-bold text-indigo-400 mb-1 text-sm">Real-World Applications:</h4>
+                                        <ul className="list-disc list-inside text-slate-400 text-xs space-y-2 mb-4">
+                                            <li><strong>Map Coloring & GIS:</strong> Used to solve problems like the Four Color Theorem and analyze adjacent territories.</li>
+                                            <li><strong>Circuit Board Layouts:</strong> Essential for converting between series and parallel circuits in electrical engineering.</li>
+                                            <li><strong>Mesh Generation:</strong> Used in 3D computer graphics (Voronoi diagrams) for textures and terrain.</li>
+                                            <li><strong>Urban Planning:</strong> Analyzing street networks and city blocks layout.</li>
+                                        </ul>
+                                        <button className="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm font-bold" onClick={()=>setShowDualInfo(false)}>Got it</button>
+                                    </div>
+                                </div>
+                             )}
+
+                             {showSuccessModal && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in zoom-in duration-300"><div className="bg-slate-900 border border-emerald-500/50 p-8 rounded-2xl max-w-xl w-full text-center shadow-2xl relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-green-600"></div><button onClick={closeModal} className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer z-10"><Icons.Close size={24} /></button><h2 className="text-3xl font-bold text-white mb-4 flex items-center justify-center gap-2"><Icons.CheckCircle className="text-emerald-400" size={32}/> Level Complete!</h2><div className="bg-emerald-950/50 border border-emerald-400/50 p-4 rounded-xl mb-6 text-sm"><h3 className="font-bold text-emerald-300 mb-2">{renderMath(resultDetails.title)}</h3><p className="text-emerald-200">{renderMath(resultDetails.message)}</p></div><div className="text-emerald-400 font-bold text-xl mb-8">+{getPoints()} Points Earned</div><button onClick={next} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center justify-center gap-2 cursor-pointer">Next Level <Icons.ArrowRight size={20}/></button></div></div>)}
+                             {showFailureModal && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in zoom-in duration-300"><div className={`bg-slate-900 border border-red-500/50 p-8 rounded-2xl max-w-xl w-full text-center shadow-2xl relative overflow-hidden ${!level.isNonPlanar && solved ? 'animate-shake' : ''}`}><div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-500 to-orange-600"></div><button onClick={closeModal} className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer z-10"><Icons.Close size={24} /></button><h2 className="text-3xl font-bold text-white mb-4 flex items-center justify-center gap-2"><Icons.XCircle className="text-red-500" size={32}/> Hard Luck!</h2><div className="text-slate-300 mb-6">{feedback?.msg.includes("Incorrect") && "Your planarity assessment was incorrect."}{level.isNonPlanar && solved && "You failed to identify this non-planar graph."}{!level.isNonPlanar && solved && "You gave up on this solvable planar graph."}</div><div className="bg-red-950/50 border border-red-400/50 p-4 rounded-xl mb-6 text-sm"><h3 className="font-bold text-red-300 mb-2">{renderMath(resultDetails.title)}</h3><p className="text-red-200">{renderMath(resultDetails.message)}</p></div><div className="text-red-400 font-bold text-xl mb-8">+(0) Points Earned</div><button onClick={retry} className="w-full py-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center justify-center gap-2 cursor-pointer">Next Level <Icons.ArrowRight size={20}/></button></div></div>)}
+                             {(feedback || isTransitioning) && !showSuccessModal && !showFailureModal && (<div className={`absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-4 rounded-xl border shadow-xl flex items-center gap-4 ${isTransitioning ? 'bg-indigo-900 border-indigo-500' : (feedback?.type==='success'?'bg-emerald-900 border-emerald-500':(feedback?.type==='error'?'bg-red-900 border-red-500':'bg-slate-800 border-slate-500'))}`}><span className="font-bold text-lg text-white">{isTransitioning ? (level.isNonPlanar ? "Wait for it..." : "Solving visually...") : feedback?.msg}</span></div>)}
+                        </section>
+                    </div>
+                </div>
+            );
+        };
+
+        const GameManager = () => {
+            const [state, setState] = useState("MENU");
+            const [lvl, setLvl] = useState(0);
+            const [score, setScore] = useState(0);
+            const handleLevelComplete = (pts) => { setScore(s => s + pts); if(lvl + 1 < LEVELS.length) setLvl(l => l + 1); else setState("RESULTS"); };
+            if(state === "MENU") return <MenuScreen onStart={() => setState("PLAY")} />;
+            if(state === "RESULTS") return <ResultsScreen score={score} onRestart={() => window.location.reload()} />;
+            return <GameLevel level={LEVELS[lvl]} currentScore={score} onComplete={handleLevelComplete} />;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<GameManager />);
+    </script>
+</body>
+</html>
